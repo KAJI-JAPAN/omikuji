@@ -1,7 +1,14 @@
 class OmikujiService
-  OMIKUJI_LIST = %w[大吉 中吉 小吉 吉 末吉]
+  LUCK_WEIGHTS = {
+    "大吉" => 5,   # 5%
+    "中吉" => 20,
+    "小吉" => 30,
+    "吉"   => 30,
+    "末吉" => 15
+  }.freeze
+
   def draw_omikuji
-    chosen_rank = OMIKUJI_LIST.sample
+    chosen_rank = determine_luck
     prompt = genarate_omikuji_prompt(chosen_rank)
     ai_message = GeminiService.new.call(prompt)
 
@@ -9,6 +16,18 @@ class OmikujiService
       rank: chosen_rank,
       ai_message: ai_message,
     }
+  end
+
+  # おみくじの確率を調整
+  def determine_luck
+    total_weight = LUCK_WEIGHTS.values.sum
+    random_point = rand(0..total_weight)
+
+    current_weight = 0
+    LUCK_WEIGHTS.each do |luck, percent|
+      current_weight += percent
+      return luck if random_point <= current_weight
+    end
   end
 
   private
